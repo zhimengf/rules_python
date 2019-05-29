@@ -73,7 +73,10 @@ class Wheel(object):
     # e.g. google_cloud-0.27.0-py2.py3-none-any.whl ->
     #      google_cloud-0.27.0.dist-info
     if self.build_tag():
-      return '{}-{}-{}.dist-info'.format(self.distribution(), self.version(), self.build_tag())
+      d = '{}-{}-{}.dist-info'.format(self.distribution(), self.version(), self.build_tag())
+      # Apparently some wheels have the build tag in the dist-info dir name, some don't...
+      if os.path.isdir(d):
+        return d
     return '{}-{}.dist-info'.format(self.distribution(), self.version())
 
   def metadata(self):
