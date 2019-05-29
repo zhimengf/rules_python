@@ -73,19 +73,19 @@ def _extract_wheel_impl(ctx):
         mnemonic = "ExtractWheel",
     )
 
-    return struct(
-        py = struct(transitive_sources = depset(direct=[d])),
-        providers = [
-            DefaultInfo(
-                files = depset(direct = outputs),
-                runfiles = ctx.runfiles(files = [d]),
-            ),
-            WheelInfo(
-                distribution = ctx.attr.distribution,
-                version = ctx.attr.version,
-            ),
-        ],
-    )
+    return [
+        DefaultInfo(
+            files = depset(direct = outputs),
+            runfiles = ctx.runfiles(files = [d]),
+        ),
+        WheelInfo(
+            distribution = ctx.attr.distribution,
+            version = ctx.attr.version,
+        ),
+        PyInfo(
+            transitive_sources = depset(direct=[d]),
+        )
+    ]
 
 extract_wheel = rule(
     implementation = _extract_wheel_impl,

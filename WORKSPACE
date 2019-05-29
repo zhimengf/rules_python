@@ -15,21 +15,32 @@ workspace(name = "io_bazel_rules_python")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories")
 
-# Skydoc stuff
+pip_repositories()
+
+# Skydoc's sass dependency is not covered by skydoc_repositories(), so we have
+# to redeclare it here. Watch that the version matches when updating Skydoc's
+# version.
+
 git_repository(
     name = "io_bazel_rules_sass",
+    # Same commit as Skydoc uses in its own WORKSPACE.
+    commit = "8ccf4f1c351928b55d5dddf3672e3667f6978d60",  # 2018-11-23
     remote = "https://github.com/bazelbuild/rules_sass.git",
-    tag = "0.0.3",
 )
 
-load("@io_bazel_rules_sass//sass:sass.bzl", "sass_repositories")
+load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
 
-sass_repositories()
+rules_sass_dependencies()
+
+# We implicitly depend on Skydoc importing Skylib under `@bazel_skylib`.
+# We don't redeclare it here in order to avoid repeating a definition that
+# could get out of sync with Skydoc.
 
 git_repository(
     name = "io_bazel_skydoc",
-    commit = "e9be81cf5be41e4200749f5d8aa2db7955f8aacc",
+    commit = "1cdb612e31448c2f6eb25b8aa67d406152275482",  # 2018-11-27
     remote = "https://github.com/bazelbuild/skydoc.git",
 )
 
@@ -38,7 +49,7 @@ load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
 skydoc_repositories()
 
 # Python
-load("//:python/def.bzl", "python_toolchain_repository")
+load("//python:def.bzl", "python_toolchain_repository")
 python_toolchain_repository(
     name = "python2",
     path = "/usr/bin/python2",

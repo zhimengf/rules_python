@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(
     "@io_bazel_rules_python//python:whl.bzl",
     _wheel_rules = "wheel_rules",
@@ -18,11 +19,11 @@ def _merged_wheels():
         "python": _python,
     }
     # Merge _additional_attributes with _wheels, applying default_attrs to each item.
-    return {
-        k: default_attrs + v for k, v in _additional_attributes.items()
-    } + {
-        k: default_attrs + v + _additional_attributes.get(k, {}) for k, v in _wheels.items()
-    }
+    return dicts.add({
+        k: dicts.add(default_attrs, v) for k, v in _additional_attributes.items()
+    }, {
+        k: dicts.add(default_attrs, v, _additional_attributes.get(k, {})) for k, v in _wheels.items()
+    })
 
 wheels = _merged_wheels()
 
@@ -56,9 +57,10 @@ def download_or_build_wheel(distribution, rule=_download_or_build_wheel, **kwarg
     attrs = {a: w.get(a, None) for a in _wheel_rules.download_or_build_wheel.attrs}
     attrs["distribution"] = distribution
     attrs["build_deps"] = [_wheel_target(wheels[k]) for k in w.get("build_deps", [])]
+    attrs.update(kwargs)
     rule(
         name = "%s_wheel" % w["name"],
-        **attrs + kwargs
+        **attrs
     )
     return _wheel_target(w)
 
@@ -66,9 +68,10 @@ def extract_wheel(wheel, distribution, rule=_extract_wheel, **kwargs):
     w = wheels[distribution]
     attrs = {a: w.get(a, None) for a in _wheel_rules.extract_wheel.attrs}
     attrs["wheel"] = wheel
+    attrs.update(kwargs)
     rule(
         name = w["name"],
-        **attrs + kwargs
+        **attrs
     )
 
 info = struct(

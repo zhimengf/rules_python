@@ -13,6 +13,8 @@
 # limitations under the License.
 """Import pip requirements into Bazel."""
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 def _pip_import_impl(ctx):
   """Core implementation of pip_import."""
 
@@ -355,9 +357,12 @@ Args:
 
 
 def pip_repositories():
-  """Pull in dependencies needed for pulling in pip dependencies.
-
-  A placeholder method that will eventually pull in any dependencies
-  needed to install pip dependencies.
-  """
-  pass
+    """Pull in dependencies needed for pulling in pip dependencies."""
+    excludes = native.existing_rules().keys()
+    if "bazel_skylib" not in excludes:
+        http_archive(
+            name = "bazel_skylib",
+            sha256 = "2ea8a5ed2b448baf4a6855d3ce049c4c452a6470b1efd1504fdb7c1c134d220a",
+            strip_prefix = "bazel-skylib-0.8.0",
+            urls = ["https://github.com/bazelbuild/bazel-skylib/archive/0.8.0.tar.gz"],
+        )
