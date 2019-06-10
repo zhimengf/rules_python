@@ -72,9 +72,9 @@ _piptool_install()
 
 http_archive(
     name = "subpar",
-    urls = ["https://github.com/google/subpar/archive/a4f9b23bf01bcc7a52d458910af65a90ee991aff.tar.gz"],
-    sha256 = "cf3762b10426a1887d37f127b4c1390785ecb969254096eb714cc1db371f78d6",
-    strip_prefix = "subpar-a4f9b23bf01bcc7a52d458910af65a90ee991aff",
+    urls = ["https://github.com/google/subpar/archive/2.0.0.tar.gz"],
+    sha256 = "b80297a1b8d38027a86836dbadc22f55dc3ecad56728175381aa6330705ac10f",
+    strip_prefix = "subpar-2.0.0",
     patch_args = ["-p1"],
     patches = [
         # https://github.com/google/subpar/pull/92

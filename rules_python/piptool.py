@@ -379,16 +379,18 @@ def genbuild(args):
               entrypoint_file = 'entrypoint_%s.py' % name
               with open(os.path.join(args.directory, entrypoint_file), 'w') as f:
                   f.write("""from %s import %s as main; main()""" % tuple(location.split(":")))
+              attrs = []
+              attrs += [("name", '"entrypoint_%s"' % name)]
+              attrs += [("srcs", '["%s"]' % entrypoint_file)]
+              attrs += [("main", '"%s"' % entrypoint_file)]
+              if args.python_version:
+                attrs += [("python_version", '"%s"' % args.python_version)]
+              attrs += [("deps", '[":pkg"]')]
               entrypoints_build += """
 py_binary(
-    name = "{entrypoint_name}",
-    srcs = ["{entrypoint_file}"],
-    main = "{entrypoint_file}",
-    deps = [":pkg"],
-)""".format(
-        entrypoint_name='entrypoint_%s' % name,
-        entrypoint_file=entrypoint_file
-        )
+    {attrs}
+)
+""".format(attrs=",\n    ".join(['{} = {}'.format(k, v) for k, v in attrs]))
 
   attrs = []
   if args.patches:
@@ -401,6 +403,8 @@ py_binary(
     attrs += [("patch_cmds", '["%s"]' % '", "'.join(args.patch_cmds))]
   attrs += [("distribution", '"%s"' % whl.distribution().lower())]
   attrs += [("version", '"%s"' % whl.version())]
+  if args.python_version:
+    attrs += [("python_version", '"%s"' % args.python_version)]
 
   with open(os.path.join(args.directory, 'BUILD'), 'w') as f:
     f.write("""
@@ -477,6 +481,9 @@ parser.add_argument('--directory', action='store', default='.',
 
 parser.add_argument('--extras', action='append',
                     help='The set of extras for which to generate library targets.')
+
+parser.add_argument('--python-version', action='store',
+                    help='Specify python_version (PY2 or PY3) to set for the py_binary targets.')
 
 parser.add_argument('--patches', action='append')
 parser.add_argument('--patch-tool', action='store')

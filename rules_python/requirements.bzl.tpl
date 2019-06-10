@@ -9,6 +9,7 @@ load("@%{repo}//:requirements.gen.bzl", _wheels = "wheels")
 
 _pip_args = [%{pip_args}]
 _python = "%{python}" or None
+_python_version = "%{python_version}" or None
 _repository = "%{repo}"
 _additional_attributes = %{additional_attributes}
 
@@ -17,6 +18,7 @@ def _merged_wheels():
         "repository": _repository,
         "pip_args": _pip_args,
         "python": _python,
+        "python_version": _python_version,
     }
     # Merge _additional_attributes with _wheels, applying default_attrs to each item.
     return dicts.add({

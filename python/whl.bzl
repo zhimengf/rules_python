@@ -43,6 +43,8 @@ def _extract_wheel(ctx, wheel):
     if ctx.attr.additional_build_content:
         args += ["--add-build-content=%s" % ctx.path(ctx.attr.additional_build_content)]
     args += ["--extras=%s" % extra for extra in ctx.attr.extras]
+    if ctx.attr.python_version:
+        args += ["--python-version=%s" % ctx.attr.python_version]
 
     # Add our sitecustomize.py that ensures all .pth files are run.
     args += ["--add-dependency=@io_bazel_rules_python//python:site"]
@@ -184,6 +186,7 @@ _extract_wheel_attrs = {
     "patch_cmds": attr.string_list(default = []),
     "repository":  attr.string(),
     "extras": attr.string_list(),
+    "python_version": attr.string(values = ["PY2", "PY3", ""]),
     "python": attr.label(
         executable = True,
         cfg = "host",

@@ -84,7 +84,9 @@ def _extract_wheel_impl(ctx):
         ),
         PyInfo(
             transitive_sources = depset(direct=[d]),
-        )
+            has_py2_only_sources = ctx.attr.python_version == "PY2",
+            has_py3_only_sources = ctx.attr.python_version == "PY3",
+        ),
     ]
 
 extract_wheel = rule(
@@ -101,6 +103,7 @@ extract_wheel = rule(
         "patch_cmds": attr.string_list(default = []),
         "distribution": attr.string(),
         "version": attr.string(),
+        "python_version": attr.string(values = ["PY2", "PY3", ""]),
         "_piptool": attr.label(
             allow_files = True,
             executable = True,

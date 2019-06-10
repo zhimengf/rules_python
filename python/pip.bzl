@@ -32,6 +32,7 @@ sh_binary(
     substitutions = {
       "%{repo}": ctx.name,
       "%{python}": str(ctx.attr.python) if ctx.attr.python else "",
+      "%{python_version}": ctx.attr.python_version if ctx.attr.python_version else "",
       "%{pip_args}": ", ".join(["\"%s\"" % arg for arg in ctx.attr.pip_args]),
       "%{additional_attributes}": ctx.attr.requirements_overrides or "{}",
     })
@@ -104,6 +105,7 @@ _pip_import = repository_rule(
         "requirements_overrides": attr.string(),
         "pip_args": attr.string_list(),
         "digests": attr.bool(default = False),
+        "python_version": attr.string(values = ["PY2", "PY3", ""]),
         "python": attr.label(
             executable = True,
             cfg = "host",
@@ -172,11 +174,11 @@ Args:
 
 def _pip_version_proxy_impl(ctx):
     loads = "".join(["""\
-load("{repo}//:requirements.bzl", wheels_{key} = "wheels")
-""".format(repo=v, key=k) for k, v in ctx.attr.values.items()])
+load("{repo}//:requirements.bzl", wheels_{i} = "wheels")
+""".format(repo=ctx.attr.values[k], i=i) for i, k in enumerate(ctx.attr.values.keys())])
 
     gathers = "".join(["""\
-    for k, v in wheels_{key}.items():
+    for k, v in wheels_{i}.items():
         if "name" not in v:
             continue
         if k not in all_reqs:
@@ -187,29 +189,15 @@ load("{repo}//:requirements.bzl", wheels_{key} = "wheels")
             if ek not in all_reqs:
                 all_reqs[ek] = {{}}
             all_reqs[ek]["{key}"] = "@%s//:%s" % (v["name"], e)
-""".format(key=k) for k in ctx.attr.values.keys()])
-
-    config_settings = "".join(["""\
-config_setting(
-    name = "{key}",
-    define_values = {{
-        "{define}": "{key}",
-    }},
-)
-""".format(define=ctx.attr.define, key=k) for k in ctx.attr.values.keys()])
-
-    specific_macros = "".join(["""\
-def requirement_{key}(r):
-    return "@{name}//:{key}__%s" % _sanitize(r)
-""".format(name=ctx.attr.name, key=k) for k in ctx.attr.values.keys()])
+""".format(i=i, key=k) for i, k in enumerate(ctx.attr.values.keys())])
 
     update_deps = "".join(["""\
         "{repo}//:update",
-""".format(repo=v, key=k) for k, v in ctx.attr.values.items()])
+""".format(repo=v) for v in ctx.attr.values.values()])
 
     update_locations = "".join(["""\
         "$(location {repo}//:update)",
-""".format(repo=v, key=k) for k, v in ctx.attr.values.items()])
+""".format(repo=v) for v in ctx.attr.values.values()])
 
     ctx.file("BUILD.bazel", content="""\
 load("@{name}//:requirements.bzl", "proxy_install")
@@ -229,9 +217,7 @@ sh_binary(
         {update_locations}
     ],
 )
-
-{config_settings}
-""".format(name=ctx.attr.name, config_settings=config_settings, update_deps=update_deps,
+""".format(name=ctx.attr.name, update_deps=update_deps,
            update_locations=update_locations))
 
     ctx.file("update.sh", content="""\
@@ -266,26 +252,16 @@ def proxy_install():
             name = name,
             actual = select(conditions),
         )
-        for py_version, label in gathers.items():
-            native.alias(
-                name = py_version + "__" + name,
-                actual = select({{
-                    py_version: label,
-                    "//conditions:default": "@{name}//:empty",
-                }}),
-            )
 
 
 def requirement(name, target = "pkg", binary = None):
     if target != "pkg":
         name = "%s[%s]" % (name, target)
     return "@{name}//:%s" % _sanitize(name).lower()
-{specific_macros}
-""".format(loads=loads, gathers=gathers, specific_macros=specific_macros, name=ctx.attr.name))
+""".format(loads=loads, gathers=gathers, name=ctx.attr.name))
 
 pip_version_proxy = repository_rule(
     attrs = {
-        "define": attr.string(),
         "values": attr.string_dict(),
         "_script": attr.label(
             executable = True,
