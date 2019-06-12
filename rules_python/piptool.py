@@ -403,6 +403,7 @@ py_binary(
     attrs += [("patch_cmds", '["%s"]' % '", "'.join(args.patch_cmds))]
   attrs += [("distribution", '"%s"' % whl.distribution().lower())]
   attrs += [("version", '"%s"' % whl.version())]
+  attrs += [("wheel_size", "%s" % os.path.getsize(args.whl))]
   if args.python_version:
     attrs += [("python_version", '"%s"' % args.python_version)]
 

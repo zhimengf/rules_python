@@ -16,6 +16,7 @@ WheelInfo = provider(
     fields = {
         "distribution": "distribution (string)",
         "version": "version (string)",
+        "size": "size of the wheel in bytes (int)",
     },
 )
 
@@ -81,6 +82,7 @@ def _extract_wheel_impl(ctx):
         WheelInfo(
             distribution = ctx.attr.distribution,
             version = ctx.attr.version,
+            size = ctx.attr.wheel_size,
         ),
         PyInfo(
             transitive_sources = depset(direct=[d]),
@@ -103,6 +105,7 @@ extract_wheel = rule(
         "patch_cmds": attr.string_list(default = []),
         "distribution": attr.string(),
         "version": attr.string(),
+        "wheel_size": attr.int(doc = "wheel size in bytes"),
         "python_version": attr.string(values = ["PY2", "PY3", ""]),
         "_piptool": attr.label(
             allow_files = True,
