@@ -39,8 +39,8 @@ sh_binary(
 
 
   cmd = [
-    ctx.path(ctx.attr.python) if ctx.attr.python else "python",
-    ctx.path(ctx.attr._script),
+    str(ctx.path(ctx.attr.python)) if ctx.attr.python else "python",
+    str(ctx.path(ctx.attr._script)),
     "resolve",
     "--name=%s" % ctx.attr.name,
     "--build-info", "%s" % ctx.attr.requirements_overrides,
@@ -99,8 +99,7 @@ _pip_import = repository_rule(
             mandatory = True,
         ),
         "requirements_bzl": attr.label(
-            allow_files = True,
-            single_file = True,
+            allow_single_file = True,
         ),
         "requirements_overrides": attr.string(),
         "pip_args": attr.string_list(),
