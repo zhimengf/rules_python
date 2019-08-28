@@ -39,7 +39,7 @@ def requirement(name, target = "pkg", binary = None):
     if key not in wheels:
         fail("Could not find pip-provided dependency: '%s'" % name)
     if binary:
-        return "@%s//:%s" % (wheels[key]["name"], "entrypoint_" + binary)
+        return "@%s//:%s" % (wheels[key]["name"], binary)
     return "@%s//:%s" % (wheels[key]["name"], target)
 
 def pip_install():

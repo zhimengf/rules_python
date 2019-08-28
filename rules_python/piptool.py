@@ -380,7 +380,7 @@ def genbuild(args):
               with open(os.path.join(args.directory, entrypoint_file), 'w') as f:
                   f.write("""from %s import %s as main; main()""" % tuple(location.split(":")))
               attrs = []
-              attrs += [("name", '"entrypoint_%s"' % name)]
+              attrs += [("name", '"%s"' % name)]
               attrs += [("srcs", '["%s"]' % entrypoint_file)]
               attrs += [("main", '"%s"' % entrypoint_file)]
               if args.python_version:
@@ -413,11 +413,6 @@ package(default_visibility = ["//visibility:public"])
 
 load("@io_bazel_rules_python//python:python.bzl", "extract_wheel")
 load("@{repository}//:requirements.bzl", "requirement")
-
-filegroup(
-  name = "wheel",
-  data = ["{wheel}"],
-)
 
 extract_wheel(
     name = "extracted",
