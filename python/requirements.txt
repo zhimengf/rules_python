@@ -4,3 +4,4 @@ requests==2.19.1
 setuptools==40.4.3
 toposort==1.5
 wheel==0.32.3
+six

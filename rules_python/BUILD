@@ -51,5 +51,6 @@ par_binary(
         requirement("setuptools"),
         requirement("toposort"),
         requirement("wheel"),
+        requirement("six"),
     ],
 )

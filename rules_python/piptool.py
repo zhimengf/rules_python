@@ -33,6 +33,7 @@ import sys
 import tempfile
 import toposort
 import zipfile
+from six.moves import urllib
 
 # Note: We carefully import the following modules in a particular
 # order, since these modules modify the import path and machinery.
@@ -662,7 +663,7 @@ def resolve(args):
                   sys.exit(1)
                 dls = re.findall(r'(?:Downloading|Using cached) (\S*\.whl)', output.stdout.getvalue().decode())
                 downloaded_wheel_urls.update({
-                  url[url.rfind("/")+1 :]: url
+                  urllib.parse.unquote(url[url.rfind("/")+1 :]): url
                   for url in dls
                 })
 
