@@ -68,15 +68,19 @@ class Wheel(object):
     # Escape any illegal characters with underscore.
     return re.sub('[-.+]', '_', canonical)
 
-  def _dist_info(self):
+  def _dist_info(self, wheel):
     # Return the name of the dist-info directory within the .whl file.
     # e.g. google_cloud-0.27.0-py2.py3-none-any.whl ->
     #      google_cloud-0.27.0.dist-info
     if self.build_tag():
       d = '{}-{}-{}.dist-info'.format(self.distribution(), self.version(), self.build_tag())
       # Apparently some wheels have the build tag in the dist-info dir name, some don't...
-      if os.path.isdir(d):
+      try:
+        wheel.getinfo(d + "/")
         return d
+      except KeyError:
+        pass
+
     return '{}-{}.dist-info'.format(self.distribution(), self.version())
 
   def metadata(self):
@@ -85,18 +89,18 @@ class Wheel(object):
     with zipfile.ZipFile(self.path(), 'r') as whl:
       # first check for metadata.json
       try:
-        with whl.open(os.path.join(self._dist_info(), 'metadata.json')) as f:
+        with whl.open(os.path.join(self._dist_info(whl), 'metadata.json')) as f:
           return json.loads(f.read().decode("utf-8"))
       except KeyError:
           pass
       # fall back to METADATA file (https://www.python.org/dev/peps/pep-0427/)
-      with whl.open(os.path.join(self._dist_info(), 'METADATA')) as f:
+      with whl.open(os.path.join(self._dist_info(whl), 'METADATA')) as f:
         return self._parse_metadata(f.read().decode("utf-8"))
 
   def entrypoints(self):
       with zipfile.ZipFile(self.path(), 'r') as whl:
           try:
-              with whl.open(os.path.join(self._dist_info(), 'entry_points.txt')) as f:
+              with whl.open(os.path.join(self._dist_info(whl), 'entry_points.txt')) as f:
                   lines = map(lambda l: l.strip().decode('utf-8'), f.readlines())
                   stream = StringIO('\n'.join(lines))
                   parser = ConfigParser()
