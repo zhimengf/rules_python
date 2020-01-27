@@ -126,7 +126,10 @@ def _download_or_build_wheel_impl(ctx):
     if ctx.attr.local_path:
         ctx.symlink(ctx.attr.local_path, ctx.attr.wheel_name)
     elif ctx.attr.urls:
-        ctx.download(url=ctx.attr.urls, sha256=ctx.attr.sha256, output=ctx.attr.wheel_name)
+        ret = ctx.download(url=ctx.attr.urls, sha256=ctx.attr.sha256, output=ctx.attr.wheel_name, allow_fail=True)
+        if not ret.success:
+            print("Could not download %s falling back to wheel build." % ctx.attr.wheel_name)
+            _build_wheel(ctx)
     else:
         _build_wheel(ctx)
 
