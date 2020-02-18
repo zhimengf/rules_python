@@ -23,6 +23,8 @@ import re
 import shutil
 import zipfile
 
+from distutils.dir_util import copy_tree
+
 try:
     from ConfigParser import ConfigParser
 except ImportError:
@@ -155,10 +157,8 @@ class Wheel(object):
     # Fix puredata structure
     purelib_path = os.path.join(directory, '%s-%s.data' % (self.distribution(), self.version()), 'purelib')
     if os.path.isdir(purelib_path):
-        for _, subdirs, _ in os.walk(purelib_path):
-            for s in subdirs:
-                shutil.move(os.path.join(purelib_path, s), os.path.join(directory, s))
-            break
+        copy_tree(purelib_path, directory)
+        shutil.rmtree(purelib_path)
 
   # _parse_metadata parses METADATA files according to https://www.python.org/dev/peps/pep-0314/
   def _parse_metadata(self, content):
