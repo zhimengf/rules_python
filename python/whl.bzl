@@ -65,7 +65,6 @@ def _extract_wheel(ctx, wheel):
 
 
 def _build_wheel(ctx):
-    env = {}
     python = ctx.path(ctx.attr.python) if ctx.attr.python else "python"
 
     # Resolve the paths to the dependency wheels to force them to be created.
@@ -84,22 +83,12 @@ def _build_wheel(ctx):
               "If you are using host machine's python interpreter, you may need to install headers from your OS vendor " +
               "(e.g. \"apt-get install python-dev python3-dev\" on Ubuntu).") % result.stderr)
 
-    # Compute a hash from the build time dependencies + env, and use that in the cache
-    # key.  The idea is that if any buildtime dependency changes versions, we will
-    # no longer use the same cached wheel.
-    hash_input = ':'.join([dep.name for dep in ctx.attr.build_deps] + ctx.attr.additional_buildtime_env)
-    cmd = [python, "-c", "import hashlib; print(hashlib.sha256('%s'.encode('utf-8')).hexdigest())" % hash_input]
-    result = ctx.execute(cmd)
-    if result.return_code:
-        fail("failed to compute checksum: %s (%s)" % (result.stdout, result.stderr))
-    cache_key = "%s/%s" % (result.stdout.strip(), ctx.attr.wheel_name)
-
     cmd = [
+        "env", "-",
         python,
         ctx.path(ctx.attr._piptool),
         "build",
         "--directory", ctx.path(""),
-        "--cache-key", cache_key,
         "--distribution", ctx.attr.distribution,
         "--version", ctx.attr.version,
         # Build the wheel in a deterministic path so that any debug symbols have stable
@@ -116,7 +105,7 @@ def _build_wheel(ctx):
         cmd += ["--sha256", ctx.attr.sha256]
 
     _report_progress(ctx, "Building")
-    result = ctx.execute(cmd, quiet=False, environment=env)
+    result = ctx.execute(cmd, quiet=False)
     if result.return_code:
         fail("pip wheel failed: %s (%s)" % (result.stdout, result.stderr))
 
@@ -128,7 +117,6 @@ def _download_or_build_wheel_impl(ctx):
     elif ctx.attr.urls:
         ret = ctx.download(url=ctx.attr.urls, sha256=ctx.attr.sha256, output=ctx.attr.wheel_name, allow_fail=True)
         if not ret.success:
-            print("Could not download %s falling back to wheel build." % ctx.attr.wheel_name)
             _build_wheel(ctx)
     else:
         _build_wheel(ctx)
@@ -166,11 +154,6 @@ _download_or_build_wheel_attrs = {
 download_or_build_wheel = repository_rule(
     attrs = _download_or_build_wheel_attrs,
     implementation = _download_or_build_wheel_impl,
-    environ = [
-        "BAZEL_WHEEL_CACHE",
-        "BAZEL_WHEEL_REMOTE_RETRY_ATTEMPTS",
-        "BAZEL_WHEEL_LOCAL_FALLBACK",
-    ],
 )
 
 def _extract_wheel_impl(ctx):

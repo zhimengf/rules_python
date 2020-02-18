@@ -12,6 +12,7 @@ _python = "%{python}" or None
 _python_version = "%{python_version}" or None
 _repository = "%{repo}"
 _additional_attributes = %{additional_attributes}
+_env = [%{env}]
 
 def _merged_wheels():
     default_attrs = {
@@ -59,6 +60,7 @@ def download_or_build_wheel(distribution, rule=_download_or_build_wheel, **kwarg
     attrs = {a: w.get(a, None) for a in _wheel_rules.download_or_build_wheel.attrs}
     attrs["distribution"] = distribution
     attrs["build_deps"] = [_wheel_target(wheels[k]) for k in w.get("build_deps", [])]
+    attrs["additional_buildtime_env"] = _env + (attrs.get("additional_buildtime_env", []) or [])
     attrs.update(kwargs)
     rule(
         name = "%s_wheel" % w["name"],

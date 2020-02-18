@@ -178,6 +178,9 @@ def build_wheel(distribution,
       "-Wno-builtin-macro-redefine",
   ])
 
+  # We don't want .pyc files end up in the built wheels!
+  env["PYTHONDONTWRITEBYTECODE"] = "1"
+
   # Set any other custom env variables the user wants to add to the wheel build.
   env.update(dict([x.split("=", 1) for x in build_env or []]))
 
@@ -272,38 +275,7 @@ def requests_with_retry(retries):
   return session
 
 def build(args):
-  cache_url = get_cache_url(args)
-  if cache_url:
-    try:
-      max_retry_attempts = get_remote_retry_attempts()
-      r = requests_with_retry(max_retry_attempts).get(cache_url)
-      use_local_fallback = False
-    # If cache server refuses connection or retries are exhausted, an exception is raised.
-    except (requests.exceptions.ConnectionError, requests.exceptions.RetryError):
-      use_local_fallback = True
-      if not local_fallback_enabled():
-        raise
-    # Build locally when remote local fallback is enabled or on 404 (not found = cache miss).
-    if use_local_fallback or r.status_code == 404:
-      build_wheel(**vars(args))
-      wheel_filename = os.path.join(args.directory, cache_url.split('/')[-1])
-      with open(wheel_filename, 'rb') as f:
-        try:
-          r = requests.put(cache_url, data=f.read())
-          if r.status_code == requests.codes.ok:
-            print("Uploaded {}".format(cache_url))
-        except requests.exceptions.ConnectionError:
-          # Probably no access to write to the cache
-          pass
-    else:
-      r.raise_for_status()
-      wheel_filename = os.path.join(args.directory, cache_url.split('/')[-1])
-      with open(wheel_filename, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=128):
-          f.write(chunk)
-      print("Downloaded {}".format(cache_url))
-  else:
-    build_wheel(**vars(args))
+  build_wheel(**vars(args))
 
 parser = subparsers.add_parser('build', help='Download or build a single wheel, optionally checking from cache first')
 parser.set_defaults(func=build)

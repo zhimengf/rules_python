@@ -35,6 +35,7 @@ sh_binary(
       "%{python_version}": ctx.attr.python_version if ctx.attr.python_version else "",
       "%{pip_args}": ", ".join(["\"%s\"" % arg for arg in ctx.attr.pip_args]),
       "%{additional_attributes}": ctx.attr.requirements_overrides or "{}",
+      "%{env}": ", ".join(["\"%s\"" % x for x in ctx.attr.env]),
     })
 
 
@@ -66,7 +67,7 @@ sh_binary(
         "\n".join([
             "#!/bin/bash",
             "rm -rf \"%s\"" % str(ctx.path("build-directory")),
-            "'%s' \"$@\"" % "' '".join(cmd),
+            "exec env - %s '%s' \"$@\"" % (" ".join(ctx.attr.env), "' '".join(cmd)),
         ]),
         executable = True,
     )
@@ -102,6 +103,7 @@ _pip_import = repository_rule(
             allow_single_file = True,
         ),
         "requirements_overrides": attr.string(),
+        "env": attr.string_list(),
         "pip_args": attr.string_list(),
         "digests": attr.bool(default = False),
         "python_version": attr.string(values = ["PY2", "PY3", ""]),
